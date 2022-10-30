@@ -1,0 +1,39 @@
+Procedure Sorter v1.10 - Manual, by: Peter Swinkels
+
+Description:
+Procedure Sorter is a utility that sorts procedures in BASIC program modules by their names. 
+
+Usage:
+The name of the module to process, project or project group file is specified as a command line argument.
+
+The following command line arguments are also supported:
+
+Argument:		Description:
+/CFB			Checks whether source files are in binary format. These are skipped when detected.
+/DEP			Deletes empty procedures.
+/SUS			Sorts procedures with underscores in their name separately.
+
+The following file name extensions are recognised:
+Extension:	Type:
+.bas		Code Module
+.cls		Class Module
+.ctl		User Control Module
+.dob		User Document Module
+.frm		Form Module
+.mak		Project File
+.pag		Property Page Module
+.vbg		Project Group
+.vbp		Project File
+
+Procedures Types Recognised:
+This program recognises event procedures, functions, methods, property procedure and subroutines. The following modifiers are recognised:
+-friend
+-private
+-public 
+-static
+
+Notes:
+Comments preceding a procedure are considered part of that procedure. This program does not expect any code outside a procedure unless it is placed before any procedure code. Multiple property procedures for the same property are sorted by whether they write or read a property value.
+
+Warning:
+Procedure Sorter cannot process files stored in a binary format (such as "QuickBasic Fast Load and Save") and will corrupt these files. Use the command line arguments to enable the detection of binary files.
