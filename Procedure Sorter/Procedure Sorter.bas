@@ -54,9 +54,10 @@ End Enum
 'This structure defines the command line arguments.
 Private Type CommandLineArgumentsStr
    CheckForBinaryFiles As Boolean         'Indicates whether to check for binary format files.
-   CurrentFile As String                  'Defines the path selected by the user.
-   DeleteEmptyProcedures As Boolean       'Indicates whether empty procedures are deleted from a module.
-   SortUnderScoresSeparately As Boolean   'Indicates whether procedures with an underscore in their name are sorted separately.
+   CurrentFile As String                  'Defines the path specified by the user.
+   DeleteEmptyProcedures As Boolean       'Indicates whether empty procedures will be deleted from a module.
+   RemoveWhitespace As Boolean            'Indicates whether whitespace at the end of lines will be removed.
+   SortUnderScoresSeparately As Boolean   'Indicates whether procedures with an underscore in their name will be sorted separately.
 End Type
 
 'This structure defines the current file names.
@@ -84,6 +85,14 @@ Private Type SortingStatusStr
    UnderScoreProcedureCount As Long       'Defines the number of procedures with an underscore in their name found.
 End Type
 
+Private Const ARGUMENT_DELIMITER As String = "/"           'Defines the command line argument delimiter.
+Private Const MODULE_PATH_DELIMITER As String = ";"        'Defines the delimiter for module names and module paths.
+Private Const MODULE_PROPERTIES_DELIMITER = "="            'Defines the delimiter for module properties in project files.
+Private Const PARAMETER_LIST As String = "("               'Defines the first character for a procedure's parameter list.
+Private Const PROJECT_PROPERTIES_DELIMITER = "="           'Defines the delimiter for project properties in project group files.
+Private Const PROPERTY_STATEMENT As String = "Property "   'Defines the property statement.
+Private Const UNDERSCORE_MARKER As String = "~"            'Indicates procedure names containing underscores.
+
 Private CommentStatements() As Variant        'Contains the list of comment statements.
 Private ModuleExtensions() As Variant         'Contains the list of supported module file name extensions.
 Private ModuleTypes() As Variant              'Contains the list of supported module types.
@@ -97,19 +106,13 @@ Private ProjectGroupExtensions() As Variant   'Contains the list of supported pr
 Private ProjectGroupTypes() As Variant        'Contains the list of supported project types.
 Private PropertyTypes() As Variant            'Contains the list of supported property procedure type statements.
 
-Private Const ARGUMENT_DELIMITER As String = "/"           'Defines the command line argument delimiter.
-Private Const MODULE_PATH_DELIMITER As String = ";"        'Defines the delimiter for module names and module paths.
-Private Const MODULE_PROPERTIES_DELIMITER = "="            'Defines the delimiter for module properties in project files.
-Private Const PARAMETER_LIST As String = "("               'Defines the first character for a procedure's parameter list.
-Private Const PROJECT_PROPERTIES_DELIMITER = "="           'Defines the delimiter for project properties in project group files.
-Private Const PROPERTY_STATEMENT As String = "Property "   'Defines the property statement.
-Private Const UNDERSCORE_MARKER As String = "~"            'Indicates procedure names containing underscores.
-
 'This procedure appends a line and if necessary a line break to the specified text.
 Private Sub AppendLine(ByRef Text As String, NewLine As String)
 On Error GoTo ErrorTrap
+   
    If Not Text = vbNullString Then Text = Text & vbCrLf
    Text = Text & NewLine
+
 EndRoutine:
    Exit Sub
 
@@ -134,6 +137,7 @@ Static CurrentArguments As CommandLineArgumentsStr
          .CheckForBinaryFiles = False
          .CurrentFile = vbNullString
          .DeleteEmptyProcedures = False
+         .RemoveWhitespace = False
          .SortUnderScoresSeparately = False
          
          Arguments = NewArguments
@@ -151,6 +155,7 @@ Static CurrentArguments As CommandLineArgumentsStr
             
             .CheckForBinaryFiles = (InStr(Arguments, ARGUMENT_DELIMITER & "CFB ") > 0)
             .DeleteEmptyProcedures = (InStr(Arguments, ARGUMENT_DELIMITER & "DEP ") > 0)
+            .RemoveWhitespace = (InStr(Arguments, ARGUMENT_DELIMITER & "RWS ") > 0)
             .SortUnderScoresSeparately = (InStr(Arguments, ARGUMENT_DELIMITER & "SUS ") > 0)
          End If
       End With
@@ -184,6 +189,7 @@ Dim Index As Long
          Next Index
       End If
    End With
+
 EndRoutine:
    Exit Sub
    
@@ -211,6 +217,7 @@ Dim Results As String
    End With
 
    MsgBox Results, vbOKOnly Or vbInformation
+
 EndRoutine:
    Exit Sub
    
@@ -232,6 +239,7 @@ Dim Position As Long
    Directory = "."
    Position = InStrRev(Path, "\")
    If Position > 0 Then Directory = Left$(Path, Position - 1)
+
 EndRoutine:
    GetDirectory = Directory
    Exit Function
@@ -274,6 +282,7 @@ Dim Position As Long
    FileName = vbNullString
    Position = InStrRev(Path, "\")
    If Position > 0 Then FileName = Mid$(Path, Position + 1)
+
 EndRoutine:
    GetFileName = FileName
    Exit Function
@@ -330,7 +339,10 @@ Dim ProcedureBody As String
          
          Do Until EOF(FileHandle)
             Line Input #FileHandle, Code
+            If CommandLineArguments().RemoveWhitespace Then Code = RTrim$(Code)
+            
             If Not (Trim$(Code) = vbNullString And CurrentProcedureName = vbNullString) Then Code = Code & vbCrLf
+            
             If IsProcedureStart(Code, CurrentProcedureName, SortingStatus) Then
                .ProcedureCode(UBound(.ProcedureCode())) = .ProcedureCode(UBound(.ProcedureCode())) & CommentBlock & Code
                .ProcedureEmpty(UBound(.ProcedureEmpty())) = False
@@ -360,6 +372,7 @@ Dim ProcedureBody As String
          Loop
       Close FileHandle
    End With
+
 EndRoutine:
    GetModuleCode = ModuleCode
    Exit Function
@@ -420,6 +433,7 @@ Dim Index As Long
          Exit For
       End If
    Next Index
+
 EndRoutine:
    HasPropertyType = HasType
    Exit Function
@@ -436,6 +450,7 @@ End Function
 'This procedure initializes this program.
 Private Sub Initialize(SortingStatus As SortingStatusStr)
 On Error GoTo ErrorTrap
+   
    CommentStatements = Array("'", "Rem ")
    ModuleExtensions = Array(".bas", ".cls", ".ctl", ".dob", ".frm", ".pag")
    ModuleTypes = Array("Code Module", "Class Module", "User Control", "Designer Object", "Form", "Property Page")
@@ -459,6 +474,7 @@ On Error GoTo ErrorTrap
    End With
       
    CommandLineArguments NewArguments:=Command$()
+
 EndRoutine:
    Exit Sub
 
@@ -517,6 +533,7 @@ Dim IsComment As Boolean
          Exit For
       End If
    Next Index
+
 EndRoutine:
    IsLineComment = IsComment
    Exit Function
@@ -529,7 +546,6 @@ ErrorTrap:
          Resume
    End Select
 End Function
-
 
 'This procedure returns whether the specified file is a module file.
 Private Function IsModuleFile(FileName As String) As Boolean
@@ -544,6 +560,7 @@ Dim IsModule As Boolean
          Exit For
       End If
    Next Index
+
 EndRoutine:
    IsModuleFile = IsModule
    Exit Function
@@ -571,6 +588,7 @@ Dim IsEnd As Boolean
          Exit For
       End If
    Next Index
+
 EndRoutine:
    IsProcedureEnd = IsEnd
    Exit Function
@@ -657,6 +675,7 @@ Dim IsProject As Boolean
          Exit For
       End If
    Next Index
+
 EndRoutine:
    IsProjectFile = IsProject
    Exit Function
@@ -683,6 +702,7 @@ Dim IsProjectGroup As Boolean
          Exit For
       End If
    Next Index
+
 EndRoutine:
    IsProjectGroupFile = IsProjectGroup
    Exit Function
@@ -746,6 +766,7 @@ Dim SortingStatus As SortingStatusStr
          End If
       End With
    End If
+
 EndRoutine:
    Exit Sub
    
@@ -774,6 +795,7 @@ Dim ModuleCode As ModuleStr
    CountProceduresToSort ModuleCode, SortingStatus
    SortProcedures ModuleCode
    ReplaceModuleCode ModuleCode, CurrentFiles, SortingStatus
+
 EndRoutine:
    Exit Sub
    
@@ -814,6 +836,7 @@ Dim ProjectData As String
          End If
       Loop
    Close FileHandle
+
 EndRoutine:
    Exit Sub
    
@@ -855,6 +878,7 @@ Dim ProjectGroupFullPath As String
          End If
       Loop
    Close FileHandle
+
 EndRoutine:
    Exit Sub
  
@@ -913,6 +937,7 @@ Dim Index As Long
          End With
       Close FileHandle
    End If
+
 EndRoutine:
    Exit Sub
    
@@ -1036,6 +1061,7 @@ Dim OtherIndex As Long
          Next Index
       End If
    End With
+
 EndRoutine:
    Exit Sub
    
@@ -1056,6 +1082,7 @@ Dim Variable3 As Variant
    Variable3 = Variable1
    Variable1 = Variable2
    Variable2 = Variable3
+
 EndRoutine:
    Exit Sub
    

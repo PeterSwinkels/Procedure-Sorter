@@ -11,6 +11,7 @@ The following command line arguments are also supported:
 Argument:		Description:
 /CFB			Checks whether source files are in binary format. These are skipped when detected.
 /DEP			Deletes empty procedures.
+/RWS			Removes whitespace at the end of lines.
 /SUS			Sorts procedures with underscores in their name separately.
 
 The following file name extensions are recognised:
