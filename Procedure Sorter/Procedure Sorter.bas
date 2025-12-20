@@ -4,6 +4,8 @@ Option Base 0
 Option Compare Binary
 Option Explicit
 
+DefLng A-Z
+
 'The Microsoft Windows API constants, functions, and structures used by this program.
 
 Private Type OPENFILENAME
@@ -29,13 +31,13 @@ Private Type OPENFILENAME
    lpTemplateName As String
 End Type
 
-Private Const ERROR_SUCCESS As Long = 0
+Private Const ERROR_SUCCESS As Long = &H0&
 Private Const MAX_STRING As Long = 65535
 Private Const OFN_EXPLORER As Long = &H80000
-Private Const OFN_HIDEREADONLY As Long = &H4
-Private Const OFN_FILEMUSTEXIST As Long = &H1000
+Private Const OFN_HIDEREADONLY As Long = &H4&
+Private Const OFN_FILEMUSTEXIST As Long = &H1000&
 Private Const OFN_LONGNAMES As Long = &H200000
-Private Const OFN_PATHMUSTEXIST As Long = &H800
+Private Const OFN_PATHMUSTEXIST As Long = &H800&
 
 Private Declare Function CommDlgExtendedError Lib "Comdlg32.dll" () As Long
 Private Declare Function GetOpenFileNameA Lib "Comdlg32.dll" (lpofn As OPENFILENAME) As Long
@@ -176,6 +178,7 @@ End Function
 
 'This procedure counts the number or procedures to be sorted.
 Private Sub CountProceduresToSort(ModuleCode As ModuleStr, SortingStatus As SortingStatusStr)
+On Error GoTo ErrorTrap
 Dim Index As Long
    
    With ModuleCode

@@ -1,4 +1,4 @@
-Procedure Sorter v1.10 - Manual, by: Peter Swinkels
+Procedure Sorter v1.12 - Manual, by: Peter Swinkels
 
 Description:
 Procedure Sorter is a utility that sorts procedures in BASIC program modules by their names. 
